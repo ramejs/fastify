@@ -153,6 +153,44 @@ For simple endpoints, skip the component and pass a `handler` function directly.
 <Route method={HttpMethod.POST} path="/echo" handler={({ request }) => ({ echo: request.body })} />
 ```
 
+### Middleware
+
+Apply Fastify `preHandler` hooks to a subtree of routes without touching registration code. `Middleware` components can be nested — hooks run outer-first.
+
+```tsx
+import type { preHandlerHookHandler, preHandlerAsyncHookHandler } from 'fastify';
+import { render } from '@ramejs/rame';
+import { Server, RouteGroup, Route, Middleware, HttpMethod } from '@ramejs/fastify';
+
+// Async middleware — runs before the handler, does not short-circuit
+const logger: preHandlerAsyncHookHandler = async (request) => {
+  console.log(`${request.method} ${request.url}`);
+};
+
+// Callback middleware — short-circuits by NOT calling done()
+const requireAuth: preHandlerHookHandler = (request, reply) => {
+  if (!request.headers.authorization) {
+    reply.status(401).send({ error: 'Unauthorized' });
+    // do not call done — terminates the lifecycle
+  }
+};
+
+await render(
+  <Server port={3000}>
+    <RouteGroup prefix="/api">
+      <Middleware use={logger}>
+        <Middleware use={requireAuth}>
+          <Route method={HttpMethod.GET} path="/me" handler={...} />
+          <Route method={HttpMethod.DELETE} path="/account" handler={...} />
+        </Middleware>
+      </Middleware>
+    </RouteGroup>
+  </Server>,
+);
+```
+
+`Middleware` only affects routes inside its subtree — sibling and parent routes are unaffected.
+
 ---
 
 ## API reference
@@ -161,13 +199,14 @@ For simple endpoints, skip the component and pass a `handler` function directly.
 
 Creates a Fastify instance, renders the child tree (registering all routes), then starts listening.
 
-| Prop             | Type                                           | Default     | Description                               |
-| ---------------- | ---------------------------------------------- | ----------- | ----------------------------------------- |
-| `port`           | `number`                                       | `3000`      | TCP port to listen on                     |
-| `host`           | `string`                                       | `'0.0.0.0'` | Interface to bind                         |
-| `listen`         | `boolean`                                      | `true`      | Set `false` to skip listening (tests)     |
-| `fastifyOptions` | `FastifyServerOptions`                         | `{}`        | Passed directly to `fastify()`            |
-| `listenOptions`  | `Omit<FastifyListenOptions, 'host' \| 'port'>` | `{}`        | Extra options forwarded to `app.listen()` |
+| Prop             | Type                                           | Default     | Description                                               |
+| ---------------- | ---------------------------------------------- | ----------- | --------------------------------------------------------- |
+| `port`           | `number`                                       | `3000`      | TCP port to listen on                                     |
+| `host`           | `string`                                       | `'0.0.0.0'` | Interface to bind                                         |
+| `listen`         | `boolean`                                      | `true`      | Set `false` to skip listening (tests)                     |
+| `fastifyOptions` | `FastifyServerOptions`                         | `{}`        | Passed directly to `fastify()`                            |
+| `listenOptions`  | `Omit<FastifyListenOptions, 'host' \| 'port'>` | `{}`        | Extra options forwarded to `app.listen()`                 |
+| `onSignal`       | `() => void`                                   | —           | Called on `SIGTERM`/`SIGINT` (default: `fastify.close()`) |
 
 When `listen={false}`, `renderToValue` returns the configured `FastifyInstance` without starting the server. This is the recommended approach for integration tests.
 
@@ -229,6 +268,20 @@ HttpMethod.DELETE; // 'DELETE'
 HttpMethod.HEAD; // 'HEAD'
 HttpMethod.OPTIONS; // 'OPTIONS'
 ```
+
+---
+
+### `Middleware`
+
+Applies a Fastify `preHandler` hook to every `Route` inside its subtree. Nesting is supported — hooks run in outer-first order.
+
+| Prop  | Type                | Required | Description                        |
+| ----- | ------------------- | -------- | ---------------------------------- |
+| `use` | `MiddlewareHandler` | yes      | A Fastify preHandler hook function |
+
+`MiddlewareHandler` is `preHandlerHookHandler | preHandlerAsyncHookHandler` from `'fastify'`.
+
+**Short-circuiting**: use callback style (`preHandlerHookHandler`) and omit the `done()` call — Fastify will stop the lifecycle when the reply is sent without `done` being called.
 
 ---
 

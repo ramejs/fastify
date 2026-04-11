@@ -1,11 +1,8 @@
 import { createContext } from '@ramejs/rame';
 import type { RameContext } from '@ramejs/rame';
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { preHandlerHookHandler, preHandlerAsyncHookHandler } from 'fastify';
 
-export type MiddlewareHandler = (
-  request: FastifyRequest,
-  reply: FastifyReply,
-) => void | Promise<void>;
+export type MiddlewareHandler = preHandlerHookHandler | preHandlerAsyncHookHandler;
 
 export const MiddlewareContext: RameContext<MiddlewareHandler[]> = createContext<
   MiddlewareHandler[]

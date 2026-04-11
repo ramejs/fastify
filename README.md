@@ -1,5 +1,7 @@
 # `@ramejs/fastify`
 
+[![Discord](https://img.shields.io/discord/1492554668708986890?style=flat&logo=discord&logoColor=white&labelColor=dark)](https://discord.gg/ramejs)
+
 > Build Fastify servers with JSX — declarative, composable, type-safe.
 
 `@ramejs/fastify` renders a JSX component tree into a live Fastify server. Routes, groups, and middleware are components. Your server reads like intent, not plumbing.

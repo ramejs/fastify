@@ -2,6 +2,7 @@ import { defineComponent, useContext, renderToValue } from '@ramejs/rame';
 import type { z } from 'zod';
 import { ServerContext } from '../Server/context';
 import { PrefixContext } from '../RouteGroup';
+import { MiddlewareContext } from '../Middleware/context';
 import { RequestContext } from './context';
 import { RoutePropsSchema, isRouteReply } from './schema';
 
@@ -12,6 +13,7 @@ export const Route = defineComponent(
   async (props): Promise<null> => {
     const fastify = useContext(ServerContext);
     const prefix = useContext(PrefixContext);
+    const middlewares = useContext(MiddlewareContext);
 
     if (!fastify) throw new Error('[Route] must be used inside a <Server>');
 
@@ -25,6 +27,7 @@ export const Route = defineComponent(
           .map((p) => (p.startsWith('/') ? p : `/${p}`))
           .join('') || '/',
       schema,
+      preHandler: middlewares.length > 0 ? middlewares : undefined,
       handler: async (request, reply) => {
         const result = handler
           ? await renderToValue(await handler({ request, reply }))

@@ -1,6 +1,9 @@
 export { Server, ServerContext } from './Server';
 export type { ServerProps } from './Server';
 
+export { Middleware, MiddlewareContext } from './Middleware';
+export type { MiddlewareProps, MiddlewareHandler } from './Middleware';
+
 export { RouteGroup } from './RouteGroup';
 export type { RouteGroupProps } from './RouteGroup';
 

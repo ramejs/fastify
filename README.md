@@ -42,11 +42,12 @@ Add JSX support to your `tsconfig.json`:
 
 ### Peer dependencies
 
-| Package        | Version  |
-| -------------- | -------- |
-| `@ramejs/rame` | `≥0.2.0` |
-| `fastify`      | `≥5.0.0` |
-| `zod`          | `^4.0.0` |
+| Package              | Version  | Notes    |
+| -------------------- | -------- | -------- |
+| `@ramejs/rame`       | `≥0.2.0` | required |
+| `fastify`            | `≥5.0.0` | required |
+| `zod`                | `^4.0.0` | required |
+| `@fastify/websocket` | `≥6.0.0` | optional — required when using the `Websocket` component |
 
 ---
 
@@ -191,6 +192,49 @@ await render(
 
 `Middleware` only affects routes inside its subtree — sibling and parent routes are unaffected.
 
+### WebSocket endpoints
+
+Enable WebSocket support by adding `websocket` to `Server`, then use the `Websocket` component to register handlers. Wrap in `RouteGroup` for prefixed paths; wrap in `Middleware` to guard the upgrade.
+
+```sh
+bun add @fastify/websocket
+```
+
+```tsx
+import { render } from '@ramejs/rame';
+import { Server, RouteGroup, Route, Middleware, Websocket, HttpMethod } from '@ramejs/fastify';
+import type { WebsocketHandler } from '@ramejs/fastify';
+import type { preHandlerHookHandler } from 'fastify';
+
+const requireAuth: preHandlerHookHandler = (request, reply) => {
+  if (!request.headers.authorization) {
+    reply.status(401).send({ error: 'Unauthorized' });
+    // omit done() to short-circuit
+  }
+};
+
+const echo: WebsocketHandler = (socket) => {
+  socket.on('message', (msg) => socket.send(`echo: ${msg.toString()}`));
+};
+
+await render(
+  <Server port={3000} websocket>
+    <RouteGroup prefix="/api">
+      {/* Regular HTTP routes coexist with WS routes */}
+      <Route method={HttpMethod.GET} path="/health" handler={() => ({ ok: true })} />
+
+      {/* WS route guarded by auth middleware */}
+      <Middleware use={requireAuth}>
+        <Websocket path="/events" handler={echo} />
+      </Middleware>
+    </RouteGroup>
+  </Server>,
+);
+
+// GET  /api/health   →  200  { "ok": true }
+// WS   /api/events   →  echoes every message back (requires Authorization header)
+```
+
 ---
 
 ## API reference
@@ -207,8 +251,9 @@ Creates a Fastify instance, renders the child tree (registering all routes), the
 | `fastifyOptions` | `FastifyServerOptions`                         | `{}`        | Passed directly to `fastify()`                            |
 | `listenOptions`  | `Omit<FastifyListenOptions, 'host' \| 'port'>` | `{}`        | Extra options forwarded to `app.listen()`                 |
 | `onSignal`       | `() => void`                                   | —           | Called on `SIGTERM`/`SIGINT` (default: `fastify.close()`) |
+| `websocket`      | `boolean`                                      | `false`     | Register `@fastify/websocket` plugin (required for `Websocket` component) |
 
-When `listen={false}`, `renderToValue` returns the configured `FastifyInstance` without starting the server. This is the recommended approach for integration tests.
+When `listen={false}`, the `FastifyInstance` is available via `ServerContext` without starting the server. This is the recommended approach for integration tests.
 
 ---
 
@@ -285,6 +330,35 @@ Applies a Fastify `preHandler` hook to every `Route` inside its subtree. Nesting
 
 ---
 
+### `Websocket`
+
+Registers a WebSocket endpoint. Requires `websocket={true}` on the enclosing `Server`.
+
+Install the optional peer dependency first:
+
+```sh
+bun add @fastify/websocket
+```
+
+| Prop      | Type               | Required | Description                                              |
+| --------- | ------------------ | -------- | -------------------------------------------------------- |
+| `path`    | `string`           | yes      | URL path (appended to any parent group prefix)           |
+| `handler` | `WebsocketHandler` | yes      | Receives `(socket: SocketStream, request: FastifyRequest)` |
+
+`WebsocketHandler` is re-exported from `@fastify/websocket` for convenience.
+
+```tsx
+import type { WebsocketHandler } from '@ramejs/fastify';
+
+const echo: WebsocketHandler = (socket) => {
+  socket.on('message', (msg) => socket.send(msg.toString()));
+};
+
+<Websocket path="/echo" handler={echo} />
+```
+
+---
+
 ### `RouteReply`
 
 Return this shape from any handler or child component to control the HTTP status code explicitly.
@@ -335,20 +409,28 @@ const RegisterPlugin = () => {
 
 ## Testing
 
-Set `listen={false}` to get back the configured `FastifyInstance` without binding a port. Use Fastify's built-in `inject` for HTTP simulation — no network required.
+Set `listen={false}` and capture the `FastifyInstance` via `ServerContext`. Use Fastify's built-in `inject` for HTTP simulation — no network required.
 
 ```tsx
-import { renderToValue } from '@ramejs/rame';
+import { render } from '@ramejs/rame';
 import type { FastifyInstance } from 'fastify';
-import { Server, Route, HttpMethod } from '@ramejs/fastify';
+import { Server, ServerContext, Route, HttpMethod } from '@ramejs/fastify';
 
-const app = (await renderToValue(
+let app: FastifyInstance | null = null;
+
+await render(
   <Server listen={false}>
+    <ServerContext.Consumer>
+      {(instance) => {
+        app = instance;
+        return null;
+      }}
+    </ServerContext.Consumer>
     <Route method={HttpMethod.GET} path="/ping" handler={() => ({ pong: true })} />
   </Server>,
-)) as FastifyInstance;
+);
 
-const res = await app.inject({ method: 'GET', url: '/ping' });
+const res = await app!.inject({ method: 'GET', url: '/ping' });
 
 console.log(res.statusCode); // 200
 console.log(res.json()); // { pong: true }

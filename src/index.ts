@@ -14,3 +14,6 @@ export { Route, RequestContext } from './Route';
 export type { RouteProps, RouteHandler, RouteReply, RequestContextValue } from './Route';
 
 export { HttpMethod } from './types';
+
+export { Websocket } from './Websocket';
+export type { WebsocketProps } from './Websocket';

@@ -42,11 +42,11 @@ Add JSX support to your `tsconfig.json`:
 
 ### Peer dependencies
 
-| Package              | Version  | Notes    |
-| -------------------- | -------- | -------- |
-| `@ramejs/rame`       | `≥0.2.0` | required |
-| `fastify`            | `≥5.0.0` | required |
-| `zod`                | `^4.0.0` | required |
+| Package              | Version  | Notes                                                    |
+| -------------------- | -------- | -------------------------------------------------------- |
+| `@ramejs/rame`       | `≥0.2.0` | required                                                 |
+| `fastify`            | `≥5.0.0` | required                                                 |
+| `zod`                | `^4.0.0` | required                                                 |
 | `@fastify/websocket` | `≥6.0.0` | optional — required when using the `Websocket` component |
 
 ---
@@ -243,14 +243,14 @@ await render(
 
 Creates a Fastify instance, renders the child tree (registering all routes), then starts listening.
 
-| Prop             | Type                                           | Default     | Description                                               |
-| ---------------- | ---------------------------------------------- | ----------- | --------------------------------------------------------- |
-| `port`           | `number`                                       | `3000`      | TCP port to listen on                                     |
-| `host`           | `string`                                       | `'0.0.0.0'` | Interface to bind                                         |
-| `listen`         | `boolean`                                      | `true`      | Set `false` to skip listening (tests)                     |
-| `fastifyOptions` | `FastifyServerOptions`                         | `{}`        | Passed directly to `fastify()`                            |
-| `listenOptions`  | `Omit<FastifyListenOptions, 'host' \| 'port'>` | `{}`        | Extra options forwarded to `app.listen()`                 |
-| `onSignal`       | `() => void`                                   | —           | Called on `SIGTERM`/`SIGINT` (default: `fastify.close()`) |
+| Prop             | Type                                           | Default     | Description                                                               |
+| ---------------- | ---------------------------------------------- | ----------- | ------------------------------------------------------------------------- |
+| `port`           | `number`                                       | `3000`      | TCP port to listen on                                                     |
+| `host`           | `string`                                       | `'0.0.0.0'` | Interface to bind                                                         |
+| `listen`         | `boolean`                                      | `true`      | Set `false` to skip listening (tests)                                     |
+| `fastifyOptions` | `FastifyServerOptions`                         | `{}`        | Passed directly to `fastify()`                                            |
+| `listenOptions`  | `Omit<FastifyListenOptions, 'host' \| 'port'>` | `{}`        | Extra options forwarded to `app.listen()`                                 |
+| `onSignal`       | `() => void`                                   | —           | Called on `SIGTERM`/`SIGINT` (default: `fastify.close()`)                 |
 | `websocket`      | `boolean`                                      | `false`     | Register `@fastify/websocket` plugin (required for `Websocket` component) |
 
 When `listen={false}`, the `FastifyInstance` is available via `ServerContext` without starting the server. This is the recommended approach for integration tests.
@@ -340,9 +340,9 @@ Install the optional peer dependency first:
 bun add @fastify/websocket
 ```
 
-| Prop      | Type               | Required | Description                                              |
-| --------- | ------------------ | -------- | -------------------------------------------------------- |
-| `path`    | `string`           | yes      | URL path (appended to any parent group prefix)           |
+| Prop      | Type               | Required | Description                                                |
+| --------- | ------------------ | -------- | ---------------------------------------------------------- |
+| `path`    | `string`           | yes      | URL path (appended to any parent group prefix)             |
 | `handler` | `WebsocketHandler` | yes      | Receives `(socket: SocketStream, request: FastifyRequest)` |
 
 `WebsocketHandler` is re-exported from `@fastify/websocket` for convenience.
@@ -354,7 +354,7 @@ const echo: WebsocketHandler = (socket) => {
   socket.on('message', (msg) => socket.send(msg.toString()));
 };
 
-<Websocket path="/echo" handler={echo} />
+<Websocket path="/echo" handler={echo} />;
 ```
 
 ---

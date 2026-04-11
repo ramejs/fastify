@@ -1,6 +1,6 @@
 {
   "name": "@ramejs/fastify",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "JSX-driven Fastify server construction powered by @ramejs/rame.",
   "license": "MIT",
   "type": "module",
@@ -37,7 +37,7 @@
     "zod": "^4.0.0"
   },
   "devDependencies": {
-    "@ramejs/rame": "workspace:../core",
+    "@ramejs/rame": ">=0.2.1",
     "@types/bun": "^1.3.11",
     "@typescript-eslint/eslint-plugin": "^8.57.2",
     "@typescript-eslint/parser": "^8.57.2",

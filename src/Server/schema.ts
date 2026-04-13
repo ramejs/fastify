@@ -10,7 +10,6 @@ export const ServerPropsSchema = BasePropsSchema.extend({
   fastifyOptions: z.custom<FastifyServerOptions>().default({}),
   listenOptions: z.custom<Omit<FastifyListenOptions, 'host' | 'port'>>().default({}),
   onSignal: z.function({ input: z.tuple([]), output: z.void() }).optional(),
-  websocket: z.boolean().default(false),
 });
 
 export type ServerProps = z.input<typeof ServerPropsSchema>;

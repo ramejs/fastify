@@ -33,4 +33,4 @@ await render(
 );
 
 // GET /api/me → { "id": "u_42", "role": "admin" }
-// GET /api/me (no auth) → 401 { "error": "Unauthorized" }
+// This example demonstrates a route-local auth guard powered by context.

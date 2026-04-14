@@ -1,4 +1,4 @@
-import { render, createContext, useContext } from '@ramejs/rame';
+import { render, createContext, useContext, type RameNode } from '@ramejs/rame';
 import { Server, Route, RouteGroup, Middleware, HttpMethod } from '../src';
 import type { preHandlerHookHandler, preHandlerAsyncHookHandler } from 'fastify';
 
@@ -22,12 +22,15 @@ const requireAuth: preHandlerHookHandler = (request, reply) => {
   }
 };
 
-// Admin-only guard
-const requireAdmin: preHandlerHookHandler = (_request, reply) => {
+// Admin-only guard component
+const RequireAdmin = ({ children }: { children?: RameNode }): RameNode => {
   const session = useContext(SessionContext);
+
   if (session?.role !== 'admin') {
-    reply.status(403).send({ error: 'Forbidden' });
+    return { status: 403, body: { error: 'Forbidden' } };
   }
+
+  return children;
 };
 
 // ── Route components ──────────────────────────────────────────────────────────
@@ -61,14 +64,14 @@ await render(
             </SessionContext.Provider>
           </Route>
 
-          {/* Admin-only — extra guard layered on top */}
-          <Middleware use={requireAdmin}>
-            <Route method={HttpMethod.GET} path="/admin/dashboard">
-              <SessionContext.Provider value={{ userId: 'u_42', role: 'admin' }}>
+          {/* Admin-only — role check happens inside the route tree */}
+          <Route method={HttpMethod.GET} path="/admin/dashboard">
+            <SessionContext.Provider value={{ userId: 'u_42', role: 'admin' }}>
+              <RequireAdmin>
                 <AdminDashboard />
-              </SessionContext.Provider>
-            </Route>
-          </Middleware>
+              </RequireAdmin>
+            </SessionContext.Provider>
+          </Route>
         </Middleware>
       </Middleware>
     </RouteGroup>
@@ -83,5 +86,5 @@ await render(
 // Middleware execution order for /api/admin/dashboard:
 //   1. requestLogger (logs the request)
 //   2. requireAuth   (checks Authorization header)
-//   3. requireAdmin  (checks role is 'admin')
+//   3. RequireAdmin  (checks role inside the route tree)
 //   4. AdminDashboard component

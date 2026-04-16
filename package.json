@@ -1,6 +1,6 @@
 {
   "name": "@ramejs/fastify",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "JSX-driven Fastify server construction powered by @ramejs/rame.",
   "keywords": [
     "fastify",
